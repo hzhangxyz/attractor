@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<head>
+   <meta charset="utf-8">
+   <title>Lorenz</title>
+   <style>
+body { margin: 0; }
+canvas { display: block; }
+div { position: absolute; color: white; }
+input { background-color: transparent; border: 0; color: white; }
+   </style>
+</head>
+<body>
+   <div>
+      <span>σ = <input id=input_sigma value=10 onkeypress=update(event)></input></span>
+      <br/>
+      <span>β = <input id=input_beta value=8/3 onkeypress=update(event)></input></span>
+      <br/>
+      <span>ρ = <input id=input_rho value=28 onkeypress=update(event)></input></span>
+   </div>
+</body>
+<script src="three.js"></script>
+<script src="OrbitControls.js"></script>
+<script>
+   var renderer = new THREE.WebGLRenderer();
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+var scene = new THREE.Scene();
+
+var sigma = 10.;
+var beta = 8./3.;
+var rho = 28.;
+
+var update = e => {
+   if(e.keyCode==13) {
+      sigma = +eval(document.getElementById('input_sigma').value);
+      beta = +eval(document.getElementById('input_beta').value);
+      rho = +eval(document.getElementById('input_rho').value);
+   }
+};
+
+var h = 0.01;
+var iter = ([x,y,z]) => [+x+h*(-x+y)*sigma,+y+h*(-y+x*(-z+rho)),+z+h*(x*y-z*beta)];
+var LCE = ([x,y,z]) => {
+
+}
+
+var number = 1000000;
+var step = 10000;
+var positions = new Float32Array(number * 3)
+var colors = new Float32Array(number * 3);
+
+var point = [0.01,0.,0.];
+
+var geometry = new THREE.BufferGeometry();
+geometry.setAttribute('position', new THREE.BufferAttribute(positions,3));
+geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+var material = new THREE.PointsMaterial({size: 1, vertexColors: true});
+var points = new THREE.Points(geometry, material);
+scene.add(points);
+
+var camera = new THREE.PerspectiveCamera(1, window.innerWidth/window.innerHeight,0.1,20000);
+camera.position.set(0,0,3000)
+camera.lookAt(0,0,0)
+
+controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping=true
+
+var do_render = () =>{
+   for (var j=0;j<step;j++){
+      i = i % number | 0;
+      point = iter(point);
+      positions[i*3+0] = +point[0];
+      positions[i*3+1] = +point[1];
+      positions[i*3+2] = +point[2] - rho + 1;
+      var color = LCE(point)
+      colors[i*3+0] = color[0];
+      colors[i*3+1] = color[1];
+      colors[i*3+2] = color[2];
+      i++;
+   }
+   points.geometry.attributes.position.needsUpdate = true;
+   points.geometry.attributes.color.needsUpdate = true;
+   controls.update();
+   renderer.render(scene, camera);
+}
+setInterval(do_render, 50);
+</script>
